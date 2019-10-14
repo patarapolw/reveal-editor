@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build"
+    "build": "vue-cli-service build",
+    "deploy": "npm run build && gh-pages -d dist"
   },
   "dependencies": {
     "@types/codemirror": "0.0.78",
@@ -37,6 +38,7 @@
     "typescript": "^3.4.3",
     "vue-cli-plugin-bootstrap-vue": "^0.4.0",
     "vue-cli-plugin-pug": "^1.0.7",
-    "vue-template-compiler": "^2.6.10"
+    "vue-template-compiler": "^2.6.10",
+    "gh-pages": "^2.1.1"
   }
 }
