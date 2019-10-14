@@ -1,0 +1,37 @@
+{
+  "name": "reveal-packager",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "dev": "parcel src/reveal.html",
+    "build": "webpack src/reveal.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Pacharapol Withayasakpunt <patarapolw@gmail.com> (https://polvcode.dev)",
+  "license": "MIT",
+  "dependencies": {
+    "@types/highlight.js": "^9.12.3",
+    "@types/hyperscript": "0.0.3",
+    "@types/showdown": "^1.9.3",
+    "gray-matter": "^4.0.2",
+    "highlight.js": "^9.15.10",
+    "hyperpug": "^0.2.1",
+    "hyperscript": "^2.0.2",
+    "showdown": "^1.9.0"
+  },
+  "devDependencies": {
+    "css-loader": "^3.2.0",
+    "file-loader": "^4.2.0",
+    "node-sass": "^4.12.0",
+    "sass": "^1.23.0",
+    "sass-loader": "^8.0.0",
+    "style-loader": "^1.0.0",
+    "ts-loader": "^6.2.0",
+    "typescript": "^3.6.4",
+    "webpack": "^4.41.1",
+    "webpack-cli": "^3.3.9"
+  }
+}
