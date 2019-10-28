@@ -3,20 +3,17 @@
   .navbar
     span Press F to enter fullscreen
     .ml-auto
-      b-button.mr-3(variant="light" v-b-modal.open) Open
-      b-button.mr-3(variant="light" :disabled="!raw" v-b-modal.edit-css) Edit CSS
-      b-button.mr-3(variant="light" :disabled="!raw" @click="saveMarkdown") Save
+      b-button.mr-3(variant="light" v-b-modal.open) Open local file or URL
+      b-button.mr-3(variant="light" :disabled="!raw" @click="saveMarkdown") Download Markdown
       b-link(href="https://github.com/reveal-editor")
         img(src="./assets/github.svg")
   .editor(:class="showPreview ? 'w-50' : 'w-100'")
     codemirror.codemirror(ref="cm" v-model="raw" :options="cmOptions" @input="onCmCodeChange")
   iframe#iframe(ref="iframe" v-show="showPreview" src="reveal.html" frameborder="0")
-  b-modal#open(title="Open file or URL" :ok-disabled="!(openFile.file || openFile.url)" @ok="onOpenClicked")
+  b-modal#open(title="Open local file or URL" :ok-disabled="!(openFile.file || openFile.url)" @ok="onOpenClicked")
     b-form-radio-group.mb-3(v-model="openFile.type", :options="openFile.options" buttons)
     b-form-file(v-model="openFile.file" v-if="openFile.type === 'file'")
     b-form-input(v-model="openFile.url" v-if="openFile.type === 'url'" placeholder="Type in the URL here." type="url")
-  b-modal#edit-css(scrollable @show="tempCss = css" @ok="css = tempCss" title="CSS Editor")
-    codemirror(v-model="tempCss" :options="{mode: 'css'}")
 </template>
 
 <script lang="ts">
@@ -36,8 +33,6 @@ export default class App extends Vue {
     }
   }
   raw = process.env.VUE_APP_PLACEHOLDER || "";
-  css = "";
-  tempCss = "";
   markdown = "";
   line: number = 0;
   offset: number = 0;
@@ -124,6 +119,8 @@ export default class App extends Vue {
         stepNumber = 0;
       } else if (/^--$/g.test(row)) {
         stepNumber++;
+      } else if (row === "// global" || row === "// hidden") {
+        slideNumber--;
       }
       i++;
       if (i > this.line) {
@@ -196,12 +193,6 @@ html, body, #app {
 
   .CodeMirror {
     height: calc(98vh - 60px) !important;
-  }
-}
-
-#edit-css {
-  .CodeMirror {
-    min-height: 400px; 
   }
 }
 

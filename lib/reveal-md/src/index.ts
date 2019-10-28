@@ -5,7 +5,9 @@ import pug, { IHyperPugFilters } from "hyperpug";
 import showdown from "showdown";
 import h from "hyperscript"
 import matter from "gray-matter";
-import cheerio from "cheerio";
+import { Cash, CashStatic, Selector } from "cash-dom";
+
+let $: (((selector?: Selector, context?: Element | HTMLElement | Document | Cash) => Cash) & CashStatic) | null = null;
 
 export const options: IRevealOptions = {
   cdn: "https://cdn.jsdelivr.net/npm/reveal.js@3.8.0/",
@@ -27,16 +29,14 @@ export interface ISlide {
 export interface IRevealOptions {
   cdn: string;
   css: string[];
-  js: (string | {async: boolean, src: string})[];
+  js: (string | { async: boolean, src: string })[];
 }
 
 export class RevealMd {
   raw: ISlide[][] = [[]];
   queue: {
-    beforeReady: Array<(reveal: RevealStatic) => void>,
-    ready: Array<(reveal: RevealStatic) => void>
+    ready: Array<(reveal?: RevealStatic) => void>
   } = {
-    beforeReady: [],
     ready: []
   };
 
@@ -44,9 +44,9 @@ export class RevealMd {
   pugConverter: (s: string) => string;
 
   revealOptions: IRevealOptions;
-  $: CheerioStatic | null = null;
 
   private _headers: any = {};
+  private _dom: any = null;
 
   constructor(public revealMdOptions: {
     markdown?: showdown.ShowdownExtension[];
@@ -75,12 +75,52 @@ export class RevealMd {
       ...(revealMdOptions.pug || {})
     };
 
-    this.pugConverter = pug.compile({filters: pugFilters});
+    this.pugConverter = pug.compile({ filters: pugFilters });
 
+    this.init();
+  }
+
+  readonly isBrowser = (typeof window !== "undefined");
+
+  get headers(): any {
+    return this._headers;
+  }
+
+  set headers(h: any) {
+    this.onReady((reveal) => {
+      if (h.theme) {
+        this.$("#reveal-theme").attr("href", this.revealOptions.cdn + `css/theme/${h.theme}.css`);
+      }
+  
+      this.$("link.reveal-css").each((_: number, el: any) => {
+        const link = el as HTMLLinkElement;
+        if (!link.href.startsWith(this.revealOptions.cdn)) {
+          link.href = this.revealOptions.cdn + link.href;
+        }
+      });
+  
+      this.$("script.reveal-js").each((_: number, el: any) => {
+        const script = el as HTMLScriptElement;
+        if (!script.src.startsWith(this.revealOptions.cdn)) {
+          script.src = this.revealOptions.cdn + script.src;
+        }
+      });
+
+      if (reveal) {
+        reveal.configure(h);
+      }
+    });
+
+    this._headers = h;
+  }
+
+  async init() {
     if (!this.isBrowser) {
-      this.$ = cheerio.load(h("html", [
+      const { JSDOM } = await import("jsdom");
+
+      this._dom = new JSDOM(h("html", [
         h("head", [
-          h("meta", {charset: "utf-8"})
+          h("meta", { charset: "utf-8" })
         ]),
         h("body", [
           h(".reveal", [
@@ -88,160 +128,59 @@ export class RevealMd {
           ])
         ])
       ]).outerHTML);
+      (global as any).window = this.window;
+      (global as any).document = this.window.document;
     }
 
-    this.init();
-  }
+    this.window.revealMd = this;
 
-  get isBrowser() {
-    return typeof window !== "undefined";
-  }
+    $ = (await import("cash-dom")).default;
+    const $body = this.$("body");
 
-  get headers(): any {
-    return this._headers;
-  }
-
-  set headers(h: any) {
-    if (h.theme) {
-      if (this.$) {
-        this.$("#reveal-theme").attr("href", this.revealOptions.cdn + `css/theme/${h.theme}.css`); 
-      } else {
-        (document.getElementById("reveal-theme") as HTMLLinkElement).href = this.revealOptions.cdn + `css/theme/${h.theme}.css`;
-      }
-    }
-
-    if (this.$) {
-      this.$("link.reveal-css").each((_: number, el: any) => {
-        const link = el as HTMLLinkElement;
-        if (!link.href.startsWith(this.revealOptions.cdn)) {
-          link.href = this.revealOptions.cdn + link.href;
-        }
-      });
-    } else {
-      Array.from(document.querySelectorAll("link.reveal-css")).forEach((el) => {
-        const link = el as HTMLLinkElement;
-        if (!link.href.startsWith(this.revealOptions.cdn)) {
-          link.href = this.revealOptions.cdn + link.href;
-        }
-      });
-    }
-
-    if (this.$) {
-      this.$("script.reveal-js").each((_: number, el: any) => {
-        const script = el as HTMLScriptElement;
-        if (!script.src.startsWith(this.revealOptions.cdn)) {
-          script.src = this.revealOptions.cdn + script.src;
-        }
-      });
-    } else {
-      Array.from(document.querySelectorAll("script.reveal-js")).forEach((el) => {
-        const script = el as HTMLScriptElement;
-        if (!script.src.startsWith(this.revealOptions.cdn)) {
-          script.src = this.revealOptions.cdn + script.src;
-        }
-      });
-    }
-
-    this.onReady((reveal) => {
-      reveal.configure(h);
-    });
-
-    this._headers = h;
-  }
-
-  init() {
-    const window = this.window;
-    if (window) {
-      window.revealMd = this;
-    }
-
-    let $body: Cheerio;
-
-    if (this.$) {
-      $body = this.$("body");
-
-      for (const href of this.revealOptions.css) {
-        $body.append(this.$("<link>").attr({
-          class: "reveal-css",
-          className: "reveal-css",
-          href: this.revealOptions.cdn + href,
-          rel: "stylesheet",
-          type: "text/css"
-        }).html() || "");
-      }
-
+    for (const href of this.revealOptions.css) {
       $body.append(this.$("<link>").attr({
-        id: "reveal-theme",
         class: "reveal-css",
         className: "reveal-css",
-        href: this.revealOptions.cdn + "css/theme/white.css",
-        rel: "stylesheet",
-        type: "text/css"
-      }).html() || "");
-    } else {
-      for (const href of this.revealOptions.css) {
-        document.body.appendChild(Object.assign(document.createElement("link"), {
-          className: "reveal-css",
-          href: this.revealOptions.cdn + href,
-          rel: "stylesheet",
-          type: "text/css"
-        }));
-      }
-
-      document.body.appendChild(Object.assign(document.createElement("link"), {
-        id: "reveal-theme",
-        className: "reveal-css",
-        href: this.revealOptions.cdn + "css/theme/white.css",
+        href: this.revealOptions.cdn + href,
         rel: "stylesheet",
         type: "text/css"
       }));
     }
-  
+
+    $body.append(this.$("<link>").attr({
+      id: "reveal-theme",
+      class: "reveal-css",
+      className: "reveal-css",
+      href: this.revealOptions.cdn + "css/theme/white.css",
+      rel: "stylesheet",
+      type: "text/css"
+    }));
+
     for (let js of this.revealOptions.js) {
-      if (!this.$) {
-        if (typeof js === "string") {
-          document.body.appendChild(Object.assign(document.createElement("script"), {
-            className: "reveal-js",
-            type: "text/javascript",
-            src: this.revealOptions.cdn + js
-          }));
-        } else {
-          const {async, src} = js;
-          document.body.appendChild(Object.assign(document.createElement("script"), {
-            className: "reveal-js",
-            async,
-            type: "text/javascript",
-            src: this.revealOptions.cdn + src
-          }));
-        }
+      if (typeof js === "string") {
+        $body.append(this.$("<script>").attr({
+          className: "reveal-js",
+          type: "text/javascript",
+          src: this.revealOptions.cdn + js
+        }));
       } else {
-        if (typeof js === "string") {
-          $body!.append(this.$("<script>").attr({
-            class: "reveal-js",
-            className: "reveal-js",
-            type: "text/javascript",
-            src: this.revealOptions.cdn + js
-          }).html() || "");
-        } else {
-          const {async, src} = js;
-          $body!.append(this.$("<script>").attr({
-            class: "reveal-js",
-            className: "reveal-js",
-            async,
-            type: "text/javascript",
-            src: this.revealOptions.cdn + src
-          }).html() || "");
-        }
+        const { async, src } = js;
+        $body.append(this.$("<script>").attr({
+          className: "reveal-js",
+          async,
+          type: "text/javascript",
+          src: this.revealOptions.cdn + src
+        }));
       }
     }
 
-    if (this.window) {
+    if (this.isBrowser) {
       this.window.addEventListener("load", () => {
         const reveal = this.window!.Reveal;
-  
+
         if (reveal) {
           reveal.initialize();
-  
+
           this.onReady(() => {
             if (this.queue.ready.length > 0) {
               this.queue.ready.forEach((it) => it(reveal));
@@ -251,26 +190,47 @@ export class RevealMd {
           });
         }
       });
+    } else {
+      $body.append(this.$("<script>").attr({
+        className: "reveal-js",
+        async: true,
+        type: "text/javascript",
+        src: this.revealOptions.cdn + "plugin/highlight/highlight.js"
+      }));
+
+      $body.append(this.$("<script>/** inline-js */</script>"));
+
+      if (this.queue.ready.length > 0) {
+        this.queue.ready.forEach((it) => it());
+      }
     }
   }
 
   get window(): Window & {
     Reveal?: RevealStatic;
     revealMd?: RevealMd;
-  } | null {
+  } {
     if (this.isBrowser) {
       return window;
     } else {
-      return null;
+      return this._dom.window;
     }
   }
 
-  get reveal(): RevealStatic | null | undefined {
-    return this.window ? this.window.Reveal : null;
+  get reveal(): RevealStatic | undefined {
+    return this.isBrowser ? this.window.Reveal : undefined;
   }
 
-  update(markdown: string) {
-    const {data, content} = matter(markdown);
+  $(selector: any, context?: any) {
+    if (context) {
+      return $!(selector, context);
+    } else {
+      return $!(selector);
+    }
+  }
+
+  async update(markdown: string) {
+    const { data, content } = matter(markdown);
 
     this.headers = data;
 
@@ -283,14 +243,7 @@ export class RevealMd {
           const lines = sectionRaw.comment.split("\n");
           if (lines.includes("hidden") || lines.includes("global")) {
             if (lines.includes("global")) {
-              if (this.$) {
-                this.$("head").append(this.$("<div style='display: none;'>").append(sectionRaw.content).html() || "");
-              } else {
-                const div = document.createElement("div");
-                div.style.display = "none";
-                div.innerHTML = sectionRaw.content;
-                document.head.appendChild(div);
-              }
+              this.$("head").append(this.$("<div style='display: none;'>").append(sectionRaw.content));
             }
 
             reverseOffset++;
@@ -305,61 +258,32 @@ export class RevealMd {
           const thisRaw = this.parseSlide(ss);
 
           if (!this.raw[x][y] || (this.raw[x][y] && this.raw[x][y].raw !== ss)) {
-            if (this.$) {
-              const container = this.$("<div class='container'>");
-              container.html(thisRaw.content);
+            const container = this.$("<div class='container'>");
+            container.html(thisRaw.content);
 
-              let subSection = this.getSlide(x, y);
-              let section = this.getSlide(x);
-    
-              if (section && subSection) {
-                const oldContainers = this.$(".container", this.$(subSection));
-                oldContainers.remove();
-                this.$(subSection).append(container.html() || "");
-              } else {
-                const ss = this.$("<section>");
-                ss.append(container.html() || "");
+            let subSection = this.getSlide(x, y);
+            let section = this.getSlide(x);
 
-                if (section) {
-                  this.$(section).append(ss.html() || "");
-                } else {
-                  const s = this.$("<section>");
-                  s.append(ss.html() || "");
-                  this.$(".reveal .slides").append(s.html() || "");
-                }
-              }
-
-              this.$("pre code", container).each((_: number, el: any) => {
-                hljs.highlightBlock(el);
-              });
+            if (section && subSection) {
+              const oldContainers = this.$(".container", this.$(subSection));
+              oldContainers.remove();
+              this.$(subSection).append(container);
             } else {
-              const container = document.createElement("div");
-              container.className = "container";
-              container.innerHTML = thisRaw.content;
+              const ss = this.$("<section>");
+              ss.append(container);
 
-              let subSection = this.getSlide(x, y);
-              let section = this.getSlide(x);
-    
-              if (section && subSection) {
-                (subSection as Element).innerHTML = "";
-                (subSection as Element).appendChild(container);
+              if (section) {
+                this.$(section).append(ss);
               } else {
-                const ss = document.createElement("section");
-                ss.appendChild(container);
-
-                if (section) {
-                  (section as Element).appendChild(ss);
-                } else {
-                  const s = document.createElement("section");
-                  s.appendChild(ss);
-                  document.querySelector(".reveal .slides")!.appendChild(s);
-                }
+                const s = this.$("<section>");
+                s.append(ss);
+                this.$(".reveal .slides").append(s);
               }
-
-              Array.from(container.querySelectorAll("pre code")).forEach((el) => {
-                hljs.highlightBlock(el);
-              });
             }
+
+            this.$("pre code", container).each((_: number, el: any) => {
+              hljs.highlightBlock(el);
+            });
           }
 
           return thisRaw;
@@ -373,11 +297,7 @@ export class RevealMd {
           if (!newRaw[x] || !newRaw[x][y]) {
             const subSection = this.getSlide(x, y);
             if (subSection) {
-              if (this.$) {
-                this.$(subSection).remove();
-              } else {
-                (subSection as Element).remove();
-              }
+              this.$(subSection).remove();
             }
           }
         });
@@ -385,11 +305,7 @@ export class RevealMd {
         if (!newRaw[x]) {
           const section = this.getSlide(x);
           if (section) {
-            if (this.$) {
-              this.$(section).remove();
-            } else {
-              (section as Element).remove();
-            }
+            this.$(section).remove();
           }
         }
       });
@@ -397,23 +313,23 @@ export class RevealMd {
       this.raw = newRaw;
     };
 
-    if (this.isBrowser) {
-      this.onReady(() => setBody());
-    } else {
-      setBody();
-    }
-
-    this.setTitle(this.headers.title);
+    return new Promise((resolve) => {
+      this.onReady(() => {
+        setBody();
+        this.setTitle(this.headers.title);
+        resolve();
+      });
+    })
   }
 
-  onReady(fn: (reveal: RevealStatic) => void) {
+  onReady(fn: (reveal?: RevealStatic) => void) {
     const reveal = this.reveal;
     if (reveal && reveal.isReady()) {
       fn(reveal);
       // reveal.slide(-1, -1, -1);
       // reveal.sync();
     } else {
-      this.queue.ready.push(fn);
+      this.queue.ready.push((fn));
     }
   }
 
@@ -432,34 +348,22 @@ export class RevealMd {
   }
 
   setTitle(s?: string) {
-    if (this.$) {
-      let $title = this.$("title");
-      if ($title.length === 0) {
-        const title = this.$("<title>");
-        title.text(s || "");
-        this.$("head").append(title.html() || "");
-      } else {
-        $title.text(s || "");
-      }
+    const $title = this.$("title");
+    if ($title.length === 0) {
+      const title = this.$("<title>");
+      title.text(s || "");
+      this.$("head").append(title);
     } else {
-      const title = document.getElementsByTagName("title")[0];
-      if (title) {
-        title.text = s || "";
-      } else {
-        document.head.appendChild(Object.assign(document.createElement("title"), {
-          innerText: s || ""
-        }));
-      }
+      $title.text(s || "");
     }
   }
 
   parseSlide(text: string): ISlide {
     const raw = text;
-
     let lang = "";
 
-    let commentLines: string[] = [];
-    let contentLines: string[] = [];
+    const commentLines: string[] = [];
+    const contentLines: string[] = [];
     let isContent = true;
 
     for (const line of text.split("\n")) {
@@ -488,8 +392,8 @@ export class RevealMd {
 
     const comment = commentLines.join("\n");
     let html = contentLines.join("\n") || text;
-  
-    switch(lang) {
+
+    switch (lang) {
       case "markdown": html = this.mdConverter.makeHtml(html); break;
       case "html": break;
       case "pug": html = this.pugConverter(html); break;
@@ -498,8 +402,8 @@ export class RevealMd {
         pre.innerText = html;
         html = pre.outerHTML;
     }
-  
-    return {lang, comment, content: html, raw};
+
+    return { lang, comment, content: html, raw };
   }
 
   buildSlide(slide: ISlide): string {
@@ -528,35 +432,18 @@ export class RevealMd {
     return resultArray.join("\n");
   }
 
-  getSlide(x: number, y?: number): CheerioElement | Element | undefined {
-    let hSlide: CheerioElement | Element | undefined;
+  getSlide(x: number, y?: number) {
+    const s = this.$(".slides > section");
+    const hSlide = s[x];
 
-    if (this.$) {
-      const s = this.$(".slides > section");
-      hSlide = s[x];
+    if (typeof y === "number") {
+      if (hSlide) {
+        const vSlides = this.$(hSlide).children("section");
 
-      if (typeof y === "number") {
-        if (hSlide) {
-          const vSlides = this.$(hSlide).children("section");
-  
-          return vSlides[y];
-        }
-
-        return undefined;
+        return vSlides[y];
       }
-    } else {
-      const s = document.querySelectorAll(".slides > section");
-      hSlide = s[x];
 
-      if (typeof y === "number") {
-        if (hSlide) {
-          const vSlides = hSlide.getElementsByTagName("section");
-  
-          return vSlides[y];
-        }
-
-        return undefined;
-      }
+      return undefined;
     }
 
     return hSlide;
@@ -587,7 +474,9 @@ export class RevealMd {
     }
 
     fs.ensureFileSync(normalize(`${dst}/index.html`));
-    fs.writeFileSync(normalize(`${dst}/index.html`), this.$!.xml());
+    fs.writeFileSync(normalize(`${dst}/index.html`), this.window.document.documentElement.outerHTML.replace("/** inline-js */", `
+    window.onload = () => Reveal.initialize()
+    `));
   }
 }
 

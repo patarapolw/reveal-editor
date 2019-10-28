@@ -19,16 +19,17 @@
     "url": "git+https://github.com/patarapolw/reveal-editor"
   },
   "dependencies": {
-    "@types/cheerio": "^0.22.13",
     "@types/highlight.js": "^9.12.3",
     "@types/hyperscript": "0.0.3",
+    "@types/jsdom": "^12.2.4",
     "@types/showdown": "^1.9.3",
-    "cheerio": "^1.0.0-rc.3",
+    "cash-dom": "^4.1.5",
     "gray-matter": "^4.0.2",
     "highlight.js": "^9.15.10",
     "hyperpug": "^0.2.1",
     "hyperscript": "^2.0.2",
-    "showdown": "^1.9.0"
+    "jsdom": "^15.2.0",
+    "showdown": "git+https://github.com/adamjc/showdown.git"
   },
   "devDependencies": {
     "@types/website-scraper": "^1.2.4",

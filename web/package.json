@@ -9,7 +9,6 @@
   },
   "dependencies": {
     "@patarapolw/reveal-md": "file:../lib/reveal-md",
-    "@types/cheerio": "^0.22.13",
     "@types/codemirror": "0.0.78",
     "@types/file-saver": "^2.0.1",
     "@types/node": "^12.7.12",
