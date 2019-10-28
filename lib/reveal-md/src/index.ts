@@ -6,6 +6,7 @@ import showdown from "showdown";
 import h from "hyperscript"
 import matter from "gray-matter";
 import { Cash, CashStatic, Selector } from "cash-dom";
+import { JSDOM } from "jsdom";
 
 let $: (((selector?: Selector, context?: Element | HTMLElement | Document | Cash) => Cash) & CashStatic) | null = null;
 
@@ -46,7 +47,7 @@ export class RevealMd {
   revealOptions: IRevealOptions;
 
   private _headers: any = {};
-  private _dom: any = null;
+  private _dom: JSDOM | null = null;
 
   constructor(public revealMdOptions: {
     markdown?: showdown.ShowdownExtension[];
@@ -213,7 +214,7 @@ export class RevealMd {
     if (this.isBrowser) {
       return window;
     } else {
-      return this._dom.window;
+      return this._dom!.window;
     }
   }
 
