@@ -18,3 +18,7 @@ content (Pug or HTML or extended Markdown)
 
 - The slides marked with `// global` or `// hidden` will be hidden.
 - Implementing `<style scoped>` would also be nice, but I haven't done it yet.
+
+## NPM package for your Node application
+
+See [/lib/reveal-md](/lib/reveal-md).
