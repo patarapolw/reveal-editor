@@ -5,7 +5,7 @@
     .ml-auto
       b-button.mr-3(variant="light" v-b-modal.open) Open local file or URL
       b-button.mr-3(variant="light" :disabled="!raw" @click="saveMarkdown") Download Markdown
-      b-link(href="https://github.com/reveal-editor")
+      b-link(href="https://github.com/patarapolw/reveal-editor")
         img(src="./assets/github.svg")
   .editor(:class="showPreview ? 'w-50' : 'w-100'")
     codemirror.codemirror(ref="cm" v-model="raw" :options="cmOptions" @input="onCmCodeChange")
@@ -89,7 +89,14 @@ export default class App extends Vue {
     this.codemirror.on("cursorActivity", (instance) => {
       this.line = instance.getCursor().line - this.offset;
     });
-    this.onCmCodeChange();
+
+    this.openFile.url = new URL(location.href).searchParams.get("q") || "";
+    if (this.openFile.url) {
+      this.openFile.type === "url";
+      this.onOpenClicked();
+    } else {
+      this.onCmCodeChange();
+    }
   }
 
   onCmCodeChange() {
@@ -140,6 +147,9 @@ export default class App extends Vue {
 
   async onOpenClicked() {
     if (this.openFile.type === "url") {
+      const url = new URL(location.href);
+      url.searchParams.set("q", this.openFile.url);
+      history.pushState(null, "", url.href);
       this.raw = await ((await fetch(this.openFile.url)).text());
     } else if (this.openFile.file) {
       const reader = new FileReader();
