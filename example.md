@@ -1,6 +1,7 @@
 ---
 # Yaml front matter is also allowed.
 title: Reveal Editor
+theme: serif
 offline: true
 ---
 // global
