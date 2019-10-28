@@ -1,8 +1,7 @@
 import RevealMd from "../src";
+// @ts-ignore
 import fs from "fs";
 
-(async () => {
-  const r = new RevealMd();
-  await r.update(fs.readFileSync("../../example.md", "utf8"));
-  await r.export("output");
-})();
+const r = new RevealMd();
+r.update(fs.readFileSync("../../example.md", "utf8"));
+fs.writeFileSync("output/index.html", r.export());
