@@ -1,7 +1,7 @@
 ---
 # Yaml front matter is also allowed.
 title: Reveal Editor
-theme: serif
+theme: serif  # try solarized, serif or white
 ---
 // global
 ```pug
