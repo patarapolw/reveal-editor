@@ -5,8 +5,7 @@
     .ml-auto
       b-button.mr-3(variant="light" v-b-modal.open) Open
       b-button.mr-3(variant="light" :disabled="!raw" v-b-modal.edit-css) Edit CSS
-      b-button.mr-3(variant="light" :disabled="!raw" @click="saveMarkdown") Save as Markdown
-      b-button.mr-3(variant="light" :disabled="!raw" @click="exportZip") Export as ZIP
+      b-button.mr-3(variant="light" :disabled="!raw" @click="saveMarkdown") Save
       b-link(href="https://github.com/reveal-editor")
         img(src="./assets/github.svg")
   .editor(:class="showPreview ? 'w-50' : 'w-100'")
@@ -23,10 +22,10 @@
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import matter from "gray-matter";
-import { RevealMaker } from '../../reveal-packager/src/reveal';
+import RevealMd from "@patarapolw/reveal-md";
 import FileSaver from "file-saver";
-import JSZip from "jszip";
 import sanitize from "sanitize-filename";
+import { RevealStatic } from "reveal.js";
 
 @Component
 export default class App extends Vue {
@@ -65,19 +64,19 @@ export default class App extends Vue {
   get iframeWindow() {
     return this.iframe.contentWindow as Window & {
       Reveal: RevealStatic,
-      reveal: RevealMaker;
+      revealMd: RevealMd;
     }
   }
 
   onIFrameReady(fn: () => void) {
     const toLoad = () => {
-      this.iframeWindow.reveal.onReady(() => {
+      this.iframeWindow.revealMd.onReady(() => {
         fn();
       });
     };
 
     if (this.iframe && this.iframe.contentDocument) {
-      if (this.iframeWindow.reveal) {
+      if (this.iframeWindow.revealMd) {
         toLoad();
       } else {
         this.iframeWindow.onload = toLoad;
@@ -95,9 +94,6 @@ export default class App extends Vue {
     this.codemirror.on("cursorActivity", (instance) => {
       this.line = instance.getCursor().line - this.offset;
     });
-    this.codemirror.on("change", (instance) => {
-      this.line = instance.getCursor().line - this.offset;
-    });
     this.onCmCodeChange();
   }
 
@@ -113,7 +109,7 @@ export default class App extends Vue {
     }
 
     this.onIFrameReady(() => {
-      this.iframeWindow.reveal.update(this.raw);
+      this.iframeWindow.revealMd.update(this.raw);
     });
   }
 
@@ -126,11 +122,11 @@ export default class App extends Vue {
       if (/^(?:---|===)$/.test(row)) {
         slideNumber++;
         stepNumber = 0;
-      } else if (/^--$/.test(row)) {
+      } else if (/^--$/g.test(row)) {
         stepNumber++;
       }
       i++;
-      if (i >= this.line) {
+      if (i > this.line) {
         break;
       }
     }
@@ -143,42 +139,6 @@ export default class App extends Vue {
       new Blob([this.raw], {type: "text/plain;charset=utf-8"}),
       `${sanitize(this.headers.title || "reveal")}.md`
     );
-  }
-
-  async exportZip() {
-    const zip = new JSZip();
-
-    const folder = zip.folder("reveal");
-    await Promise.all([
-      fetch("reveal.html").then((r) => r.text()).then((r) => zip.file("reveal.html", (() => {
-        if (this.headers.offline) {
-          r = r.replace('"reveal.min.js"', '"https://patarapolw.github.io/reveal-editor/reveal.min.js"');
-        }
-
-        return r.replace(
-          "/** data */",
-          `var data = ${JSON.stringify(this.raw).replace(/([<>])/g, '\\$1')}`
-        ).replace(
-          "/** css */",
-          this.css
-        )
-      })())),
-      ...(this.headers.offline ? [fetch("reveal.min.js").then((r) => r.text()).then((r) => zip.file("reveal.min.js", r))] : []),
-      ...(this.headers.offline ? [...this.iframeWindow.reveal.rSource.css, ...this.iframeWindow.reveal.rSource.js] : [])
-      .map((el) => {
-        if (typeof el !== "string") {
-          el = el.src;
-        }
-
-        return fetch(this.iframeWindow.revealCDN + el)
-        .then((r) => r.blob()).then((r) => zip.file(el as string, r));
-      })
-    ]);
-
-    zip.generateAsync({type: "blob"})
-    .then((content) => {
-        FileSaver.saveAs(content, `${sanitize(this.headers.title || "reveal")}.zip`);
-    });
   }
 
   async onOpenClicked() {

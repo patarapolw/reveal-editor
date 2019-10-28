@@ -8,16 +8,16 @@
     "deploy": "npm run build && gh-pages -d dist"
   },
   "dependencies": {
+    "@patarapolw/reveal-md": "file:../lib/reveal-md",
+    "@types/cheerio": "^0.22.13",
     "@types/codemirror": "0.0.78",
     "@types/file-saver": "^2.0.1",
-    "@types/jszip": "^3.1.6",
     "@types/node": "^12.7.12",
     "animate.css": "^3.7.2",
     "bootstrap-vue": "^2.0.0-rc.19",
     "core-js": "^2.6.5",
     "file-saver": "^2.0.2",
     "gray-matter": "^4.0.2",
-    "jszip": "^3.2.2",
     "sanitize-filename": "^1.6.3",
     "vue": "^2.6.10",
     "vue-class-component": "^7.0.2",
