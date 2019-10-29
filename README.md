@@ -5,7 +5,7 @@ Clone this repository and customize to your needs, e.g.
 - HyperPug extensions
 - SPA-ify Reveal app (e.g. by mounting `document.getElementsByClassName('reveal')[0]`)
 
-If you don't need the live editor, or want a different editor, you can see [/reveal-packager](/reveal-packager).
+If you don't need the live editor, or want a different editor, please see [/lib/reveal-md](/lib/reveal-md).
 
 ## Features
 
