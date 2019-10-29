@@ -407,26 +407,72 @@ export class RevealMd {
     return hSlide;
   }
 
-  export(): string {
+  /**
+   * 
+   * @param dst Destination directory, in case of Node.js
+   */
+  async export(dst?: string): Promise<string> {
+    let html: string | null = null;
+
     if (this.headers.offline) {
       const headers = this.headers;
-      headers.offline = false;
-      this.headers = headers;
 
-      // const scraper = (await import("website-scraper")).default;
-      // const SaveToExistingDirectoryPlugin = require('website-scraper-existing-directory');
+      if (isNode && dst) {
+        const scrape = (await import("website-scraper")).default;
+        const SaveToExistingDirectoryPlugin = require('website-scraper-existing-directory');
 
-      // await scraper({
-      //   urls: [`file://${dst}/index.html`],
-      //   directory: dst,
-      //   // @ts-ignore
-      //   plugins: [ new SaveToExistingDirectoryPlugin() ]
-      // });
+        const cdn = this.revealOptions.cdn;
+
+        class CDNPlugin {
+          constructor(private cdn: string) {}
+        
+          apply(registerAction: any) {
+            registerAction("generateFilename", ({resource}: {resource: any}) => {
+              return {filename: resource.url.replace(this.cdn, "")};
+            })
+          }
+        }
+        
+        scrape({
+          urls: [
+            cdn + "css/reveal.css",
+            cdn + `css/theme/${this.headers.theme || "white"}.css`,
+            cdn + "js/reveal.min.js",
+            cdn + "plugin/highlight/highlight.js",
+          ],
+          directory: dst,
+          // @ts-ignore
+          plugins: [new SaveToExistingDirectoryPlugin(), new CDNPlugin(cdn)]
+        });
+
+        html = document.documentElement.outerHTML.replace("/** inline-js */", `
+        window.onload = () => Reveal.initialize({
+          dependencies: [
+            { src: 'plugin/highlight/highlight.js', async: true },
+          ]
+        })
+        `);
+      } else {
+        headers.offline = false;
+        this.headers = headers;
+      }
     }
 
-    return document.documentElement.outerHTML.replace("/** inline-js */", `
-    window.onload = () => Reveal.initialize()
-    `);
+    if (html === null) {
+      html = document.documentElement.outerHTML.replace("/** inline-js */", `
+      window.onload = () => Reveal.initialize()
+      `);
+    }
+
+    if (isNode && dst) {
+      const { writeFileSync } = await import("fs");
+      const { join } = await import("path");
+      const mkdirp = require("mkdirp");
+      mkdirp.sync(dst);
+      writeFileSync(join(dst, "index.html"), html);
+    }
+
+    return html;
   }
 }
 

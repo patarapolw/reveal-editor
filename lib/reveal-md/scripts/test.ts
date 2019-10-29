@@ -4,4 +4,4 @@ import fs from "fs";
 
 const r = new RevealMd();
 r.update(fs.readFileSync("../../example.md", "utf8"));
-fs.writeFileSync("output/index.html", r.export());
+r.export("output");

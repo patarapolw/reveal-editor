@@ -29,12 +29,15 @@
     "hyperscript": "^2.0.2",
     "jsdom": "^15.2.0",
     "jsdom-global": "^3.0.2",
-    "showdown": "git+https://github.com/adamjc/showdown.git"
+    "showdown": "git+https://github.com/adamjc/showdown.git",
+    "@types/node": "^12.11.7"
   },
   "devDependencies": {
-    "@types/node": "^12.11.7",
+    "esm": "^3.2.25"
+  },
+  "optionalDependencies": {
     "@types/website-scraper": "^1.2.4",
-    "esm": "^3.2.25",
+    "mkdirp": "^0.5.1",
     "website-scraper": "^4.2.0",
     "website-scraper-existing-directory": "^0.1.0"
   }

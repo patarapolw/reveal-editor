@@ -2,6 +2,7 @@
 # Yaml front matter is also allowed.
 title: Reveal Editor
 theme: serif  # try solarized, serif or white
+offline: true  # Won't work on this online editor, but will work in Node.js / web server
 ---
 // global
 ```pug

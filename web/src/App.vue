@@ -5,6 +5,7 @@
     .ml-auto
       b-button.mr-3(variant="light" v-b-modal.open) Open local file or URL
       b-button.mr-3(variant="light" :disabled="!raw" @click="saveMarkdown") Download Markdown
+      b-button.mr-3(variant="light" :disabled="!raw" @click="saveHTML") Download HTML
       b-link(href="https://github.com/patarapolw/reveal-editor")
         img(src="./assets/github.svg")
   .editor(:class="showPreview ? 'w-50' : 'w-100'")
@@ -142,6 +143,13 @@ export default class App extends Vue {
     FileSaver.saveAs(
       new Blob([this.raw], {type: "text/plain;charset=utf-8"}),
       `${sanitize(this.headers.title || "reveal")}.md`
+    );
+  }
+
+  async saveHTML() {
+    FileSaver.saveAs(
+      new Blob([await this.iframeWindow.revealMd.export()], {type: "text/plain;charset=utf-8"}),
+      `${sanitize(this.headers.title || "reveal")}.html`
     );
   }
 
