@@ -1,6 +1,6 @@
 {
   "name": "@patarapolw/reveal-md",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Library for parsing/generating Reveal.js presentation to-and-from Markdown",
   "main": "build/index.js",
   "types": "build/index.d.ts",

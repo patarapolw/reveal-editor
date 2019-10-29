@@ -21,7 +21,7 @@ content (Pug or HTML or extended Markdown)
 I have already tested this in [/scripts/test.ts](/scripts/test.ts)
 
 ```typescript
-import RevealMd from "../src";
+import RevealMd from "@patarapolw/reveal-md";
 import fs from "fs";
 
 const r = new RevealMd();
