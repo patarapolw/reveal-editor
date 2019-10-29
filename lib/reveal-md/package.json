@@ -1,6 +1,6 @@
 {
   "name": "@patarapolw/reveal-md",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Library for parsing/generating Reveal.js presentation to-and-from Markdown",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -10,13 +10,15 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "reveal.js"
+    "reveal.js",
+    "presentation",
+    "hyperpug"
   ],
   "author": "Pacharapol Withayasakpunt <patarapolw@gmail.com> (https://polvcode.dev)",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/patarapolw/reveal-editor"
+    "url": "git+https://github.com/patarapolw/reveal-editor.git"
   },
   "dependencies": {
     "@types/highlight.js": "^9.12.3",

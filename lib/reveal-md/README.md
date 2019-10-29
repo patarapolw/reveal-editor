@@ -24,11 +24,9 @@ I have already tested this in [/scripts/test.ts](/scripts/test.ts)
 import RevealMd from "../src";
 import fs from "fs";
 
-(async () => {
-  const r = new RevealMd();
-  await r.update(fs.readFileSync("../../example.md", "utf8"));
-  await r.export("output");
-})();
+const r = new RevealMd();
+r.update(fs.readFileSync("../../example.md", "utf8"));
+r.export("output");
 ```
 
 ## Live editor

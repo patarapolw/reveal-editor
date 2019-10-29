@@ -438,20 +438,20 @@ export class RevealMd {
             cdn + "css/reveal.css",
             cdn + `css/theme/${this.headers.theme || "white"}.css`,
             cdn + "js/reveal.min.js",
-            cdn + "plugin/highlight/highlight.js",
+            // cdn + "plugin/highlight/highlight.js",
           ],
           directory: dst,
           // @ts-ignore
           plugins: [new SaveToExistingDirectoryPlugin(), new CDNPlugin(cdn)]
         });
 
-        html = document.documentElement.outerHTML.replace("/** inline-js */", `
-        window.onload = () => Reveal.initialize({
-          dependencies: [
-            { src: 'plugin/highlight/highlight.js', async: true },
-          ]
-        })
-        `);
+        // html = document.documentElement.outerHTML.replace("/** inline-js */", `
+        // window.onload = () => Reveal.initialize({
+        //   dependencies: [
+        //     { src: 'plugin/highlight/highlight.js', async: true },
+        //   ]
+        // })
+        // `);
       } else {
         headers.offline = false;
         this.headers = headers;
