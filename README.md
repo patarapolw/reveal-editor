@@ -1,3 +1,5 @@
+**Deprecated. Please use <https://github.com/patarapolw/reveal-md>**
+
 Live Reveal.js editor, with Markdown and [HyperPug](https://github.com/patarapolw/hyperpug). See <https://patarapolw.github.com/reveal-editor>
 
 Clone this repository and customize to your needs, e.g.
